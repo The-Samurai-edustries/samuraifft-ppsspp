@@ -1,0 +1,31 @@
+From 30d4333e55bb380b096f49762983b39cdaf38355 Mon Sep 17 00:00:00 2001
+From: FFT Fork <catfancyx@gmail.com>
+Date: Mon, 5 Oct 2026 11:08:09 -0400
+Subject: [PATCH] server_cpp: fix IPv4 listen address detection (inet_pton
+ returns 0 on family mismatch)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B1wCWY3fr9BVfcoaSHUd7R
+---
+ server_cpp/native_socket_linux.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/server_cpp/native_socket_linux.cpp b/server_cpp/native_socket_linux.cpp
+index 57a547b..6a28d9f 100644
+--- a/server_cpp/native_socket_linux.cpp
++++ b/server_cpp/native_socket_linux.cpp
+@@ -55,9 +55,9 @@ int native_tcp_listen(std::string ip, uint16_t port){
+ 
+ 	int family = AF_INET6;
+ 
+-	if (inet_pton(AF_INET6, ip.c_str(), &addr6.sin6_addr) == -1){
++	if (inet_pton(AF_INET6, ip.c_str(), &addr6.sin6_addr) != 1){
+ 		family = AF_INET;
+-		if (inet_pton(AF_INET, ip.c_str(), &addr4.sin_addr) == -1){
++		if (inet_pton(AF_INET, ip.c_str(), &addr4.sin_addr) != 1){
+ 			return -2;
+ 		}
+ 	}
+-- 
+2.43.0
+

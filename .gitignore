@@ -152,3 +152,10 @@ RAPrefs_PPSSPP.cfg
 cmake-build-*/
 
 /.vscode/
+
+# FFT fork: never commit game data
+*.iso
+*.cso
+*.chd
+*.ppst
+SAVEDATA/
