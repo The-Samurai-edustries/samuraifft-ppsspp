@@ -1049,6 +1049,7 @@ static int ptp_send_postoffice(int idx, const void *data, int *len) {
 		ERROR_LOG(Log::sceNet, "%s: critical: huge client buf %d what is going on please fix", __func__, len ? *len : 0);
 	}
 
+	DEBUG_LOG(Log::sceNet, "ptp_send_postoffice[%d]: Sent %d bytes via relay", idx + 1, *len);
 	return 0;
 }
 
@@ -1161,6 +1162,7 @@ static int ptp_recv_postoffice(int idx, void *data, int *len) {
 	// AEMU_POSTOFFICE_CLIENT_SESSION_DATA_TRUNC is okay, it just means it has data in it's user space buffer
 
 	*len = len_copy;
+	DEBUG_LOG(Log::sceNet, "ptp_recv_postoffice[%d]: Received %d bytes via relay", idx + 1, len_copy);
 	return 0;
 }
 
