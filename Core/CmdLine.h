@@ -180,6 +180,19 @@ struct CommandLineOptions {
 	// Headless: preserve the alpha channel when saving PNG screenshots.
 	std::optional<bool> screenshotSaveKeepAlpha;
 
+	// Ad hoc networking identity, so several instances can play together on one machine.
+	std::optional<std::string> macAddress;
+	std::optional<std::string> adhocServer;
+	std::optional<bool> hostAdhocServer;
+	std::optional<int> adhocRelayMode;
+	std::optional<int> portOffset;
+	std::optional<std::string> nickname;
+	// Which PPSSPP instance this is (1 = first). Picks the 127.0.0.N loopback address used for
+	// local multiplayer. Headless never loads a config, so it never gets one assigned otherwise.
+	std::optional<int> instanceId;
+	std::optional<std::string> logChannels;
+	std::optional<bool> realtime;
+
 	// Headless: mount an ISO/CSO on umd1:.
 	std::optional<std::string> mountIso;
 	// Headless: also log through OutputDebugString (Windows).

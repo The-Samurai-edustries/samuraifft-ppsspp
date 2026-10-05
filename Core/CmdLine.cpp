@@ -3,6 +3,7 @@
 
 #include "Core/Config.h"
 #include "Core/CmdLine.h"
+#include "Core/Instance.h"
 #include "Core/WebServer.h"
 #include "Core/Util/PathUtil.h"
 #include "Common/File/FileUtil.h"
@@ -211,6 +212,15 @@ static const CommandLineParam g_autoParams[] = {
 	// The old name for --timeout-wall, kept working because it's in a lot of scripts.
 	{POFF(timeoutWall), CmdParamType::Double, "timeout", '\0', "Alias for --timeout-wall", CmdLineMode::Headless},
 	{POFF(maxScreenshotError), CmdParamType::Double, "max-mse", '\0', "Maximum allowed MSE error for screenshot comparison", CmdLineMode::Headless},
+	{POFF(macAddress), CmdParamType::String, "mac", '\0', "Ad hoc MAC address (xx:xx:xx:xx:xx:xx)"},
+	{POFF(adhocServer), CmdParamType::String, "adhoc-server", '\0', "Ad hoc (pro-adhoc) server host or IP"},
+	{POFF(hostAdhocServer), CmdParamType::Bool, "host-adhoc-server", '\0', "Run the built-in ad hoc server in this instance"},
+	{POFF(adhocRelayMode), CmdParamType::Int, "adhoc-relay", '\0', "Ad hoc relay: 0=auto, 1=always on, 2=always off"},
+	{POFF(portOffset), CmdParamType::Int, "port-offset", '\0', "Ad hoc port offset"},
+	{POFF(instanceId), CmdParamType::Int, "instance-id", '\0', "Instance number for local multiplayer (127.0.0.N)"},
+	{POFF(logChannels), CmdParamType::String, "log-channels", '\0', "With --log: only these comma-separated channels log at debug level", CmdLineMode::Headless},
+	{POFF(realtime), CmdParamType::Bool, "realtime", '\0', "Run at real PSP speed instead of as fast as possible", CmdLineMode::Headless},
+	{POFF(nickname), CmdParamType::String, "nickname", '\0', "Player nickname"},
 	{POFF(mountIso), CmdParamType::String, "mount", 'm', "Mount ISO/CSO on umd1:", CmdLineMode::Headless},
 	{POFF(unpackUpdater), CmdParamType::String, "unpack-updater", '\0', "Unpack the firmware in an updater EBOOT.PBP into DIR and exit", CmdLineMode::Headless},
 	{POFF(unpackUpdaterModel), CmdParamType::String, "unpack-updater-model", '\0', "PSP model to unpack for (01g..12g, default any)", CmdLineMode::Headless},
@@ -551,6 +561,33 @@ void CommandLineOptions::ApplyToConfig() const {
 	}
 	if (pauseMenuExit.has_value()) {
 		g_Config.bPauseMenuExitsEmulator = pauseMenuExit.value();
+	}
+	if (macAddress.has_value()) {
+		g_Config.sMACAddress = macAddress.value();
+		g_Config.DoNotSaveSetting(&g_Config.sMACAddress);
+	}
+	if (adhocServer.has_value()) {
+		g_Config.sProAdhocServer = adhocServer.value();
+		g_Config.DoNotSaveSetting(&g_Config.sProAdhocServer);
+	}
+	if (hostAdhocServer.has_value()) {
+		g_Config.bEnableAdhocServer = hostAdhocServer.value();
+		g_Config.DoNotSaveSetting(&g_Config.bEnableAdhocServer);
+	}
+	if (adhocRelayMode.has_value()) {
+		g_Config.iAdhocServerRelayMode = adhocRelayMode.value();
+		g_Config.DoNotSaveSetting(&g_Config.iAdhocServerRelayMode);
+	}
+	if (portOffset.has_value()) {
+		g_Config.iPortOffset = portOffset.value();
+		g_Config.DoNotSaveSetting(&g_Config.iPortOffset);
+	}
+	if (instanceId.has_value() && instanceId.value() >= 1 && instanceId.value() <= 255) {
+		PPSSPP_ID = (uint8_t)instanceId.value();
+	}
+	if (nickname.has_value()) {
+		g_Config.sNickName = nickname.value();
+		g_Config.DoNotSaveSetting(&g_Config.sNickName);
 	}
 	if (DebuggerPort().has_value()) {
 		g_Config.iRemoteISOPort = DebuggerPort().value();

@@ -435,6 +435,7 @@ static bool RunAutoTest(GraphicsContext *graphicsContext, CoreParameter &corePar
 	const double emulatedStepLimit = 1.0;
 	double emulatedElapsed = 0.0;
 	double lastEmulatedTime = CoreTiming::GetGlobalTimeUs() / 1000000.0;
+	double realtimeAnchor = startTime;
 	coreState = coreParameter.startBreak ? CORE_STEPPING_CPU : CORE_RUNNING_CPU;
 	while (coreState == CORE_RUNNING_CPU || coreState == CORE_STEPPING_CPU) {
 		// Savestate loads/saves are queued and applied here, same as EmuScreen::render does in the
@@ -456,7 +457,21 @@ static bool RunAutoTest(GraphicsContext *graphicsContext, CoreParameter &corePar
 			});
 		}
 
-		int blockTicks = (int)usToCycles(1000000 / 10);
+		// --realtime: hold emulated time to the wall clock, in small slices so input and network
+		// events land at a realistic pace. If we fall behind (paused, or a heavy scene), re-anchor
+		// rather than sprinting to catch up.
+		const bool realtime = !PSP_CoreParameter().fastForward;
+		if (realtime) {
+			const double target = realtimeAnchor + emulatedElapsed;
+			const double now = time_now_d();
+			if (target > now) {
+				sleep_precise(std::min(target - now, 0.05), "headless-realtime");
+			} else if (now - target > 0.25) {
+				realtimeAnchor = now - emulatedElapsed;
+			}
+		}
+
+		int blockTicks = (int)usToCycles(realtime ? 1000000 / 60 : 1000000 / 10);
 		PSP_RunLoopFor(blockTicks);
 
 		// If we were rendering, this might be a nice time to do something about it.
@@ -773,6 +788,21 @@ int main(int argc, const char* argv[]) {
 		g_logManager.SetEnabled(type, (fullLog || outputDebugStringLog));
 		g_logManager.SetLogLevel(type, LogLevel::LDEBUG);  // TODO: Make the level configurable.
 	}
+	// --log-channels=A,B: only these channels log at debug, the rest only errors. Lets several
+	// instances run with networking logs on without drowning in kernel/audio spam.
+	if (cmdLineOptions.logChannels.has_value()) {
+		std::vector<std::string> wanted;
+		SplitString(cmdLineOptions.logChannels.value(), ',', wanted);
+		for (int i = 0; i < (int)Log::NUMBER_OF_LOGS; i++) {
+			Log type = (Log)i;
+			bool keep = false;
+			for (const auto &w : wanted) {
+				if (w == LogManager::GetLogTypeName(type))
+					keep = true;
+			}
+			g_logManager.SetLogLevel(type, keep ? LogLevel::LDEBUG : LogLevel::LERROR);
+		}
+	}
 	if (fullLog) {
 		// Only with --log, add the printfLogger.
 		g_logManager.EnableOutput(LogOutput::Printf);
@@ -1015,7 +1045,9 @@ int main(int argc, const char* argv[]) {
 	coreParameter.renderHeight = 272 * coreParameter.renderScaleFactor;
 	coreParameter.pixelWidth = 480 * coreParameter.renderScaleFactor;
 	coreParameter.pixelHeight = 272 * coreParameter.renderScaleFactor;
-	coreParameter.fastForward = true;
+	// --realtime runs at real PSP speed. Needed for multiplayer tests: games time out waiting for
+	// peers by counting frames, so unthrottled instances give up long before a partner arrives.
+	coreParameter.fastForward = !cmdLineOptions.realtime.value_or(false);
 
 	Path exePath = File::GetExeDirectory();
 

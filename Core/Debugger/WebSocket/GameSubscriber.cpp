@@ -38,6 +38,7 @@
 #include "Core/ELF/ParamSFO.h"
 #include "Core/HLE/sceDisplay.h"
 #include "Core/RetroAchievements.h"
+#include "Core/SaveState.h"
 #include "Core/System.h"
 
 // Declared rather than included from Core/HLE/sceNet.h, which reaches winsock and so windows.h
@@ -61,6 +62,8 @@ DebuggerSubscriber *WebSocketGameInit(DebuggerEventHandlerMap &map) {
 	map["game.speed.get"] = &WebSocketGameSpeedGet;
 	map["game.speed.set"] = &WebSocketGameSpeedSet;
 	map["version"] = &WebSocketVersion;
+	map["game.state.save"] = &WebSocketGameStateSave;
+	map["game.state.load"] = &WebSocketGameStateLoad;
 
 	return nullptr;
 }
@@ -282,4 +285,27 @@ void WebSocketVersion(DebuggerRequest &req) {
 		json.writeNull("path");
 	else
 		json.writeString("path", path);
+}
+
+// Savestate to/from an explicit file path. Queued; applied by SaveState::Process() on the next
+// frame, so the reply only means "accepted". Callers wait for the file (save) or a frame (load).
+// Used by automated multiplayer tests that need to jump two instances to a known point.
+void WebSocketGameStateSave(DebuggerRequest &req) {
+	std::string path;
+	if (!req.ParamString("path", &path))
+		return;
+	if (!PSP_IsInited())
+		return req.Fail("Game not running");
+	SaveState::Save(Path(path), -1);
+	req.Respond();
+}
+
+void WebSocketGameStateLoad(DebuggerRequest &req) {
+	std::string path;
+	if (!req.ParamString("path", &path))
+		return;
+	if (!PSP_IsInited())
+		return req.Fail("Game not running");
+	SaveState::Load(Path(path), -1);
+	req.Respond();
 }

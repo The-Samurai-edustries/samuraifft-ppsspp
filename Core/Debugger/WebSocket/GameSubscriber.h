@@ -26,3 +26,5 @@ void WebSocketGameStatus(DebuggerRequest &req);
 void WebSocketGameSpeedGet(DebuggerRequest &req);
 void WebSocketGameSpeedSet(DebuggerRequest &req);
 void WebSocketVersion(DebuggerRequest &req);
+void WebSocketGameStateSave(DebuggerRequest &req);
+void WebSocketGameStateLoad(DebuggerRequest &req);
