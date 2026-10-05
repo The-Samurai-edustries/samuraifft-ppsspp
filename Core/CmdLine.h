@@ -183,6 +183,7 @@ struct CommandLineOptions {
 	// Ad hoc networking identity, so several instances can play together on one machine.
 	std::optional<std::string> macAddress;
 	std::optional<std::string> adhocServer;
+	std::optional<std::string> adhocRoom;
 	std::optional<bool> hostAdhocServer;
 	std::optional<int> adhocRelayMode;
 	std::optional<int> portOffset;

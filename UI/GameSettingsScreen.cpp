@@ -1020,6 +1020,10 @@ void GameSettingsScreen::CreateNetworkingSettings(UI::ViewGroup *networkingSetti
 		networkingSettings->Add(new ChoiceWithFixedValueDisplay(g_Config.sProAdhocServer, n->T("Ad hoc server address")))->OnClick.Add(launchAdhocServerScreen);
 	}
 
+	PopupTextInputChoice *roomCode = networkingSettings->Add(new PopupTextInputChoice(GetRequesterToken(), &g_Config.sAdhocRoomCode, n->T("Room code"), "", 16, screenManager()));
+	roomCode->SetEnabled(!PSP_IsInited());
+	networkingSettings->Add(new SettingHint(n->T("RoomCodeHint", "Optional. Players who enter the same room code only see each other on the server. Leave empty to see everyone playing the same game."), roomCode));
+
 	static const char *relayModes[] = {"Auto", "Yes", "No"};
 	PopupMultiChoice *relayModePopup = networkingSettings->Add(new PopupMultiChoice(&g_Config.iAdhocServerRelayMode, n->T("Try to use server-provided packet relay"), relayModes, 0, ARRAY_SIZE(relayModes), I18NCat::DIALOG, screenManager()));
 	relayModePopup->SetEnabled(!PSP_IsInited());

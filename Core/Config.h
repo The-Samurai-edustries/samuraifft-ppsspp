@@ -588,6 +588,9 @@ public:
 	// Networking
 	bool bEnableAdhocServer;
 	std::string sProAdhocServer;
+	// Ad hoc room code. When set, only players using the same code (and game) see each other
+	// on the ad hoc server, so friends on a busy public server don't land in strangers' lobbies.
+	std::string sAdhocRoomCode;
 	int iAdhocServerRelayMode;
 	bool bAdhocServerShowPlayerPorts;
 	std::string sInfrastructureDNSServer;

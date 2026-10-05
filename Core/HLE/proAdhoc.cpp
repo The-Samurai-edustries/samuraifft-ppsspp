@@ -54,6 +54,7 @@
 #include "Core/HLE/sceNetAdhoc.h"
 #include "Core/Instance.h"
 #include "proAdhoc.h"
+#include "Core/HLE/proAdhocServer.h"
 
 #include "Core/HLE/NetAdhocCommon.h"
 
@@ -2186,6 +2187,45 @@ int getPTPSocketCount() {
 	return counter;
 }
 
+// Normalises a room code: letters and digits only, uppercase. "fft-night 1" -> "FFTNIGHT1".
+std::string AdhocNormalizeRoomCode(std::string_view code) {
+	std::string out;
+	for (char c : code) {
+		if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+		if ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
+			out.push_back(c);
+	}
+	return out;
+}
+
+// With a room code set, the game id sent to the ad hoc server is replaced by a code derived
+// from (room code, game), so the server - which already keeps different games apart - also keeps
+// different rooms apart. Regional variants are first mapped to one id by the same override table
+// the server uses, so e.g. US and EU copies with the same room code still meet. The result is 'R'
+// plus 8 base-36 characters, which passes every server's [A-Z0-9]{9} product code check.
+bool AdhocRoomGameId(const SceNetAdhocctlAdhocId *adhoc_id, uint8_t *out) {
+	std::string room = AdhocNormalizeRoomCode(g_Config.sAdhocRoomCode);
+	if (room.empty())
+		return false;
+	SceNetAdhocctlProductCode canon{};
+	memcpy(canon.data, adhoc_id->data, ADHOCCTL_ADHOCID_LEN);
+	game_product_override(&canon);
+	uint64_t h = 1469598103934665603ULL;  // FNV-1a 64
+	auto mix = [&h](const char *p, size_t n) {
+		for (size_t i = 0; i < n; i++) { h ^= (uint8_t)p[i]; h *= 1099511628211ULL; }
+	};
+	mix(canon.data, ADHOCCTL_ADHOCID_LEN);
+	mix("|", 1);
+	mix(room.data(), room.size());
+	static const char digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	out[0] = 'R';
+	for (int i = 1; i < ADHOCCTL_ADHOCID_LEN; i++) {
+		out[i] = digits[h % 36];
+		h /= 36;
+	}
+	return true;
+}
+
 int initNetwork(SceNetAdhocctlAdhocId *adhoc_id){
 	auto n = GetI18NCategory(I18NCat::NETWORKING);
 	int iResult = 0;
@@ -2291,6 +2331,9 @@ int initNetwork(SceNetAdhocctlAdhocId *adhoc_id){
 	strncpy((char *)&packet.name.data, g_Config.sNickName.c_str(), ADHOCCTL_NICKNAME_LEN);
 	packet.name.data[ADHOCCTL_NICKNAME_LEN - 1] = 0;
 	memcpy(packet.game.data, adhoc_id->data, ADHOCCTL_ADHOCID_LEN);
+	if (AdhocRoomGameId(adhoc_id, (uint8_t *)packet.game.data)) {
+		INFO_LOG(Log::sceNet, "InitNetwork: room code active, matchmaking as %.9s", (const char *)packet.game.data);
+	}
 
 	IsSocketReady((int)metasocket, false, true, nullptr, adhocDefaultTimeout);
 	DEBUG_LOG(Log::sceNet, "InitNetwork: Sending LOGIN OPCODE %d", packet.base.opcode);

@@ -214,6 +214,7 @@ static const CommandLineParam g_autoParams[] = {
 	{POFF(maxScreenshotError), CmdParamType::Double, "max-mse", '\0', "Maximum allowed MSE error for screenshot comparison", CmdLineMode::Headless},
 	{POFF(macAddress), CmdParamType::String, "mac", '\0', "Ad hoc MAC address (xx:xx:xx:xx:xx:xx)"},
 	{POFF(adhocServer), CmdParamType::String, "adhoc-server", '\0', "Ad hoc (pro-adhoc) server host or IP"},
+	{POFF(adhocRoom), CmdParamType::String, "adhoc-room", '\0', "Ad hoc room code (only players with the same code see each other)"},
 	{POFF(hostAdhocServer), CmdParamType::Bool, "host-adhoc-server", '\0', "Run the built-in ad hoc server in this instance"},
 	{POFF(adhocRelayMode), CmdParamType::Int, "adhoc-relay", '\0', "Ad hoc relay: 0=auto, 1=always on, 2=always off"},
 	{POFF(portOffset), CmdParamType::Int, "port-offset", '\0', "Ad hoc port offset"},
@@ -569,6 +570,10 @@ void CommandLineOptions::ApplyToConfig() const {
 	if (adhocServer.has_value()) {
 		g_Config.sProAdhocServer = adhocServer.value();
 		g_Config.DoNotSaveSetting(&g_Config.sProAdhocServer);
+	}
+	if (adhocRoom.has_value()) {
+		g_Config.sAdhocRoomCode = adhocRoom.value();
+		g_Config.DoNotSaveSetting(&g_Config.sAdhocRoomCode);
 	}
 	if (hostAdhocServer.has_value()) {
 		g_Config.bEnableAdhocServer = hostAdhocServer.value();
