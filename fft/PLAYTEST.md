@@ -18,8 +18,9 @@ This is PPSSPP 1.20.4 with changes aimed at online Rendezvous/Melee play.
 ## Good to know
 - Ending a turn with Wait takes **two X presses**: one to pick the facing, one to confirm it.
   Until then your partner sees "Communicating…".
-- Known issue being worked on: if one player's emulator closes or crashes mid-battle, the
-  other player's game freezes instead of showing "disconnected". Restart to recover.
+- If your partner disconnects mid-battle you'll see "Connection error. Exiting battle." and go
+  back to the tavern with your progress intact. Rarely (about 1 in 6 in testing) the battle
+  screen freezes instead; if that happens, restart the emulator. Please report when it does.
 
 ## Reporting problems
 Note roughly when it happened (menu / mission select / which turn), what each screen showed,
